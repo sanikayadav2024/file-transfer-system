@@ -4,19 +4,27 @@ import com.google.zxing.client.j2se.*;
 import com.google.zxing.common.*;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class QRCodeGenerator {
-    public static void main(String[] args) throws Exception {
-        String url = "http://192.168.43.150:8080"; // your IP
+    public QRCodeGenerator() throws Exception {
+        String url = "";
+        try {
+            InetAddress ip = InetAddress.getLocalHost();
+            String IP =  ip.getHostAddress();
+            url = "http://" + IP + ":8080";
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         int width = 300;
         int height = 300;
 
         BitMatrix matrix = new MultiFormatWriter()
                 .encode(url, BarcodeFormat.QR_CODE, width, height);
-
-        Path path = new File("qrcode.png").toPath();
+        Path path = Paths.get(System.getProperty("java.io.tmpdir"), "qrcode.png");
         MatrixToImageWriter.writeToPath(matrix, "PNG", path);
 
         System.out.println("QR Code Generated!");

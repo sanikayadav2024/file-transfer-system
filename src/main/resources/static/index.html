@@ -1,41 +1,178 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>File Transfer System</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 420px;
+            background: #111;
+            border-radius: 20px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 15px;
+        }
+
+        /* QR section */
+        .qr-box {
+            background: #1c1c1c;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .qr-box img {
+            width: 160px;
+            margin-top: 10px;
+            border-radius: 10px;
+        }
+
+        /* File input hidden */
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Custom file button */
+        .file-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #4facfe;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: 0.3s;
+        }
+
+        .file-btn:hover {
+            background: #3a8ee6;
+        }
+
+        /* Upload button */
+        .upload-btn {
+            width: 100%;
+            padding: 10px;
+            background: #ff7eb3;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .upload-btn:hover {
+            background: #ff5c9a;
+        }
+
+        #fileName {
+            font-size: 12px;
+            color: #bbb;
+            margin-bottom: 10px;
+        }
+
+        #status {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #0f0;
+        }
+
+        .footer {
+            margin-top: 15px;
+            font-size: 11px;
+            color: #777;
+        }
+
+    </style>
 </head>
+
 <body>
 
-<h2>Upload File</h2>
+<div class="container">
 
-<input type="file" id="fileInput">
-<button onclick="uploadFile()">Upload</button>
+    <h1>⚡ QuickDrop</h1>
+    <h2>Scan QR to upload from mobile</h2>
 
-<p id="status"></p>
+    <div class="qr-box">
+        <p>Scan Me</p>
+        <img src="qrcode.png" alt="QR Code">
+    </div>
+
+    <!-- Custom file button -->
+    <label class="file-btn">
+        📤 Choose File
+        <input type="file" id="fileInput" onchange="showFileName()">
+    </label>
+
+    <p id="fileName">No file selected</p>
+
+    <button class="upload-btn" onclick="uploadFile()">Upload</button>
+
+    <p id="status"></p>
+
+    <div class="footer">
+        Same WiFi • Secure Transfer
+    </div>
+
+</div>
 
 <script>
-function uploadFile() {
-    let file = document.getElementById("fileInput").files[0];
-
-    if (!file) {
-        alert("Select a file first!");
-        return;
+    function showFileName() {
+        let file = document.getElementById("fileInput").files[0];
+        document.getElementById("fileName").innerText = file ? file.name : "No file selected";
     }
 
-    let formData = new FormData();
-    formData.append("file", file);
+    function uploadFile() {
+        let file = document.getElementById("fileInput").files[0];
 
-    fetch("/files/upload", {
-        method: "POST",
-        body: formData
-    })
-    .then(res => res.text())
-    .then(data => {
-        document.getElementById("status").innerText = data;
-    })
-    .catch(err => console.error(err));
-}
+        if (!file) {
+            alert("Select a file first!");
+            return;
+        }
+
+        let formData = new FormData();
+        formData.append("file", file);
+
+        fetch("/files/upload", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.text())
+        .then(data => {
+            document.getElementById("status").innerText = data;
+        })
+        .catch(err => console.error(err));
+    }
 </script>
 
 </body>

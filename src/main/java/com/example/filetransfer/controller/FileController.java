@@ -12,7 +12,7 @@ import java.io.*;
 @RequestMapping("/files")
 public class FileController {
 
-    private final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads/";
+    private final String UPLOAD_DIR = System.getProperty("user.home")+File.separator + "Downloads" + File.separator;
 
     @PostMapping("/upload")
     public String uploadFile(@RequestParam("file") MultipartFile file) {
@@ -46,19 +46,5 @@ public class FileController {
                 .contentLength(file.length())
                 .body(resource);
     }
-    @DeleteMapping("/delete/{filename}")
-    public String deleteFile(@PathVariable String filename) {
-        try {
-            File file = new File(UPLOAD_DIR + filename);
 
-            if (file.exists()) {
-                file.delete();
-                return "Deleted: " + filename;
-            } else {
-                return "File not found!";
-            }
-        } catch (Exception e) {
-            return "Error: " + e.getMessage();
-        }
-    }
 }
