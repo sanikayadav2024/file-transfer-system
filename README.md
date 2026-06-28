@@ -121,7 +121,7 @@ Feel free to fork this repository and submit a pull request 🚀
 
 ## 👨‍💻 Author
 
-**Sanjay Yadav**  
+**Sanika Yadav**  
 GitHub: https://github.com/sanikayadav2024  
 
 ---
