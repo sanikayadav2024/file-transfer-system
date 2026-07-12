@@ -22,6 +22,7 @@ public class FileTransferApplication {
 
                 System.out.println("Opening: " + url);
 
+
                 Runtime.getRuntime().exec("cmd /c start " + url);
 
             } catch (Exception e) {
