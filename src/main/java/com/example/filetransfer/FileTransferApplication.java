@@ -22,7 +22,6 @@ public class FileTransferApplication {
 
                 System.out.println("Opening: " + url);
 
-                // ✅ MOST RELIABLE (works in EXE)
                 Runtime.getRuntime().exec("cmd /c start " + url);
 
             } catch (Exception e) {
