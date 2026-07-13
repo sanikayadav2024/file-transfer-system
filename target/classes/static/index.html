@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>File Transfer System</title>
@@ -30,7 +31,7 @@
             border-radius: 20px;
             padding: 20px;
             color: white;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
             text-align: center;
         }
 
@@ -57,6 +58,24 @@
             width: 160px;
             margin-top: 10px;
             border-radius: 10px;
+        }
+
+        /* Copy link button */
+        .copy-btn {
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            background: #43e97b;
+            border: none;
+            border-radius: 8px;
+            color: #111;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #38c96b;
         }
 
         /* File input hidden */
@@ -112,69 +131,144 @@
             font-size: 11px;
             color: #777;
         }
-
     </style>
 </head>
 
 <body>
 
-<div class="container">
+    <div class="container">
 
-    <h1>⚡ QuickDrop</h1>
-    <h2>Scan QR to upload from mobile</h2>
+        <h1>⚡ QuickDrop</h1>
+        <h2>Scan QR to upload from mobile</h2>
 
-    <div class="qr-box">
-        <p>Scan Me</p>
-        <img src="/api/qrcode" alt="QR Code">
+        <div class="qr-box">
+            <p>Scan Me</p>
+
+            <img src="/api/qrcode" alt="QR Code">
+
+            <button class="copy-btn" onclick="copyConnectionLink()">
+                🔗 Copy Connection Link
+            </button>
+
+        </div>
+
+
+        <label class="file-btn">
+            📤 Choose File
+            <input type="file" id="fileInput" onchange="showFileName()">
+        </label>
+
+        <p id="fileName">No file selected</p>
+
+        <button class="upload-btn" onclick="uploadFile()">
+            Upload
+        </button>
+
+        <p id="status"></p>
+
+        <div class="footer">
+            Same WiFi • Secure Transfer
+        </div>
 
     </div>
 
-    <!-- Custom file button -->
-    <label class="file-btn">
-        📤 Choose File
-        <input type="file" id="fileInput" onchange="showFileName()">
-    </label>
 
-    <p id="fileName">No file selected</p>
+    <script>
 
-    <button class="upload-btn" onclick="uploadFile()">Upload</button>
-
-    <p id="status"></p>
-
-    <div class="footer">
-        Same WiFi • Secure Transfer
-    </div>
-
-</div>
-
-<script>
-    function showFileName() {
-        let file = document.getElementById("fileInput").files[0];
-        document.getElementById("fileName").innerText = file ? file.name : "No file selected";
-    }
-
-    function uploadFile() {
-        let file = document.getElementById("fileInput").files[0];
-
-        if (!file) {
-            alert("Select a file first!");
-            return;
+        function showFileName() {
+            let file = document.getElementById("fileInput").files[0];
+            document.getElementById("fileName").innerText =
+                file ? file.name : "No file selected";
         }
 
-        let formData = new FormData();
-        formData.append("file", file);
 
-        fetch("/files/upload", {
-            method: "POST",
-            body: formData
-        })
-        .then(res => res.text())
-        .then(data => {
-            document.getElementById("status").innerText = data;
-        })
-        .catch(err => console.error(err));
-    }
-</script>
+        function uploadFile() {
+
+            let file = document.getElementById("fileInput").files[0];
+
+            if (!file) {
+                alert("Select a file first!");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("file", file);
+
+
+            fetch("/files/upload", {
+                method: "POST",
+                body: formData
+            })
+
+                .then(res => res.text())
+
+                .then(data => {
+                    document.getElementById("status").innerText = data;
+                })
+
+                .catch(err => {
+                    console.error(err);
+                });
+
+        }
+
+
+        function copyConnectionLink() {
+
+            let link = window.location.href;
+
+            // Modern clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+
+                navigator.clipboard.writeText(link)
+                    .then(() => {
+                        document.getElementById("status").innerText =
+                            "✅ Connection link copied!";
+                    })
+                    .catch(() => {
+                        fallbackCopy(link);
+                    });
+
+            } else {
+                // For local WiFi IP addresses
+                fallbackCopy(link);
+            }
+        }
+
+
+        function fallbackCopy(text) {
+
+            let textarea = document.createElement("textarea");
+
+            textarea.value = text;
+
+            textarea.style.position = "fixed";
+            textarea.style.left = "-9999px";
+
+            document.body.appendChild(textarea);
+
+            textarea.focus();
+            textarea.select();
+
+            try {
+
+                document.execCommand("copy");
+
+                document.getElementById("status").innerText =
+                    "✅ Connection link copied!";
+
+            } catch (err) {
+
+                document.getElementById("status").innerText =
+                    "❌ Copy failed";
+
+            }
+
+            document.body.removeChild(textarea);
+        }
+    </script>
+
 
 </body>
+
 </html>
