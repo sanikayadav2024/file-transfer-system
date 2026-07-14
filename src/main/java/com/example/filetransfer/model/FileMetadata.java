@@ -8,11 +8,12 @@ public class FileMetadata {
     private long size;
     private long uploadTime;
     private long expirationTime;
+    private String contentType;
 
     public FileMetadata() {
     }
 
-    public FileMetadata(String filename, String originalName, String title, String description, long size, long uploadTime, long expirationTime) {
+    public FileMetadata(String filename, String originalName, String title, String description, long size, long uploadTime, long expirationTime, String contentType) {
         this.filename = filename;
         this.originalName = originalName;
         this.title = title;
@@ -20,6 +21,7 @@ public class FileMetadata {
         this.size = size;
         this.uploadTime = uploadTime;
         this.expirationTime = expirationTime;
+        this.contentType = contentType;
     }
 
     public String getFilename() {
@@ -76,6 +78,14 @@ public class FileMetadata {
 
     public void setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 
     public boolean isExpired() {

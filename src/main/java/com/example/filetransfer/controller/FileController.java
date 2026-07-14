@@ -129,7 +129,7 @@ public class FileController {
 
     // CRUD: CREATE
     @PostMapping("/files/upload")
-    public ResponseEntity<String> uploadFile(
+    public ResponseEntity<?> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "description", required = false) String description,
@@ -159,6 +159,11 @@ public class FileController {
             String finalTitle = (title != null && !title.trim().isEmpty()) ? title.trim() : safeName;
             String finalDesc = (description != null) ? description.trim() : "";
 
+            String contentType = file.getContentType();
+            if (contentType == null || contentType.isEmpty()) {
+                contentType = "application/octet-stream";
+            }
+
             FileMetadata metadata = new FileMetadata(
                     uniqueName,
                     safeName,
@@ -166,13 +171,14 @@ public class FileController {
                     finalDesc,
                     size,
                     now,
-                    expiration
+                    expiration,
+                    contentType
             );
 
             metadataMap.put(uniqueName, metadata);
             saveMetadata();
 
-            return ResponseEntity.ok("Uploaded: " + safeName);
+            return ResponseEntity.ok(metadata);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
