@@ -131,6 +131,67 @@
             font-size: 11px;
             color: #777;
         }
+
+        /* Metadata Card Styles */
+        .metadata-card {
+            background: rgba(28, 28, 28, 0.95);
+            border: 1px solid rgba(79, 172, 254, 0.4);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease-out;
+            backdrop-filter: blur(8px);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .metadata-card h3 {
+            font-size: 14px;
+            color: #4facfe;
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-align: center;
+            border-bottom: 1px solid rgba(79, 172, 254, 0.2);
+            padding-bottom: 6px;
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .meta-row:last-child {
+            border-bottom: none;
+        }
+
+        .meta-label {
+            color: #888;
+            font-weight: 300;
+        }
+
+        .meta-value {
+            color: #eee;
+            font-weight: 500;
+            word-break: break-all;
+            text-align: right;
+            max-width: 65%;
+        }
+
     </style>
 </head>
 
@@ -166,6 +227,27 @@
 
         <p id="status"></p>
 
+        <!-- Metadata Card -->
+        <div id="metadataCard" class="metadata-card" style="display: none;">
+            <h3>🎉 Upload Successful</h3>
+            <div class="meta-row">
+                <span class="meta-label">File Name</span>
+                <span id="metaName" class="meta-value">-</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Size</span>
+                <span id="metaSize" class="meta-value">-</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Type</span>
+                <span id="metaType" class="meta-value">-</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Uploaded At</span>
+                <span id="metaTime" class="meta-value">-</span>
+            </div>
+        </div>
+
         <div class="footer">
             Same WiFi • Secure Transfer
         </div>
@@ -174,16 +256,56 @@
 
 
     <script>
-
         function showFileName() {
             let file = document.getElementById("fileInput").files[0];
-            document.getElementById("fileName").innerText =
-                file ? file.name : "No file selected";
+            document.getElementById("fileName").innerText = file ? file.name : "No file selected";
         }
 
+        function getFriendlyFileType(contentType, filename) {
+            if (!contentType) {
+                contentType = "";
+            }
+            
+            let lowerType = contentType.toLowerCase();
+            
+            if (lowerType.startsWith("image/")) {
+                return "🖼️ Image (" + contentType + ")";
+            }
+            if (lowerType.startsWith("video/")) {
+                return "🎥 Video (" + contentType + ")";
+            }
+            if (lowerType.startsWith("audio/")) {
+                return "🎵 Audio (" + contentType + ")";
+            }
+            if (lowerType === "application/pdf") {
+                return "📄 PDF Document";
+            }
+            if (lowerType.startsWith("text/")) {
+                return "📝 Text File";
+            }
+            if (lowerType.includes("zip") || lowerType.includes("rar") || lowerType.includes("tar") || lowerType.includes("gzip") || lowerType.includes("compressed")) {
+                return "📦 Archive File";
+            }
+            if (lowerType.includes("word") || lowerType.includes("officedocument.wordprocessingml")) {
+                return "📄 Word Document";
+            }
+            if (lowerType.includes("excel") || lowerType.includes("officedocument.spreadsheetml")) {
+                return "📊 Spreadsheet";
+            }
+            if (lowerType.includes("powerpoint") || lowerType.includes("officedocument.presentationml")) {
+                return "📉 Presentation";
+            }
+            
+            // Fallback to extension if type is application/octet-stream or generic
+            let ext = filename.split('.').pop().toLowerCase();
+            if (ext && ext !== filename) {
+                return "📄 " + ext.toUpperCase() + " File";
+            }
+            
+            return "📁 Binary File";
+        }
 
         function uploadFile() {
-
             let file = document.getElementById("fileInput").files[0];
 
             if (!file) {
@@ -194,32 +316,52 @@
             let formData = new FormData();
             formData.append("file", file);
 
+            let statusEl = document.getElementById("status");
+            statusEl.innerText = "Uploading...";
+            statusEl.style.color = "#ff7eb3";
+            
+            let cardEl = document.getElementById("metadataCard");
+            cardEl.style.display = "none";
 
             fetch("/files/upload", {
                 method: "POST",
                 body: formData
             })
-
-                .then(res => res.text())
-
-                .then(data => {
-                    document.getElementById("status").innerText = data;
-                })
-
-                .catch(err => {
-                    console.error(err);
-                });
-
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(text => { throw new Error(text) });
+                }
+                return res.json();
+            })
+            .then(metadata => {
+                statusEl.innerText = "Upload complete!";
+                statusEl.style.color = "#0f0";
+                
+                // Populate metadata card
+                document.getElementById("metaName").innerText = metadata.originalName;
+                document.getElementById("metaSize").innerText = metadata.formattedSize || (Math.round(metadata.size / 1024 * 100) / 100 + " KB");
+                document.getElementById("metaType").innerText = getFriendlyFileType(metadata.contentType, metadata.originalName);
+                document.getElementById("metaTime").innerText = new Date(metadata.uploadTime).toLocaleString();
+                
+                // Show the card
+                cardEl.style.display = "block";
+                
+                // Clear file input
+                document.getElementById("fileInput").value = "";
+                document.getElementById("fileName").innerText = "No file selected";
+            })
+            .catch(err => {
+                statusEl.innerText = err.message || "Upload failed";
+                statusEl.style.color = "#ff4a4a";
+                console.error(err);
+            });
         }
 
-
         function copyConnectionLink() {
-
             let link = window.location.href;
 
             // Modern clipboard API
             if (navigator.clipboard && window.isSecureContext) {
-
                 navigator.clipboard.writeText(link)
                     .then(() => {
                         document.getElementById("status").innerText =
@@ -228,46 +370,33 @@
                     .catch(() => {
                         fallbackCopy(link);
                     });
-
             } else {
                 // For local WiFi IP addresses
                 fallbackCopy(link);
             }
         }
 
-
         function fallbackCopy(text) {
-
             let textarea = document.createElement("textarea");
-
             textarea.value = text;
-
             textarea.style.position = "fixed";
             textarea.style.left = "-9999px";
-
             document.body.appendChild(textarea);
-
             textarea.focus();
             textarea.select();
 
             try {
-
                 document.execCommand("copy");
-
                 document.getElementById("status").innerText =
                     "✅ Connection link copied!";
-
             } catch (err) {
-
                 document.getElementById("status").innerText =
                     "❌ Copy failed";
-
             }
 
             document.body.removeChild(textarea);
         }
     </script>
-
 
 </body>
 
