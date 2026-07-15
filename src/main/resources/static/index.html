@@ -120,6 +120,44 @@
             margin-bottom: 10px;
         }
 
+        /* Progress bar */
+        .progress-container {
+            display: none;
+            width: 100%;
+            background: #2a2a2a;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            height: 18px;
+            position: relative;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4facfe, #43e97b);
+            transition: width 0.15s ease;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+        }
+
         #status {
             margin-top: 12px;
             font-size: 13px;
@@ -167,6 +205,11 @@
 
         <p id="fileName">No file selected</p>
 
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+            <div class="progress-text" id="progressText">0%</div>
+        </div>
+
         <button class="upload-btn" onclick="uploadFile()">
             Upload
         </button>
@@ -200,6 +243,27 @@
             let file = document.getElementById("fileInput").files[0];
             document.getElementById("fileName").innerText = file ? file.name : "No file selected";
             document.getElementById("status").innerText = "";
+            resetProgress();
+        }
+
+        function setProgress(percent) {
+            const container = document.getElementById("progressContainer");
+            const bar = document.getElementById("progressBar");
+            const text = document.getElementById("progressText");
+
+            container.classList.add("active");
+            bar.style.width = percent + "%";
+            text.innerText = percent + "%";
+        }
+
+        function resetProgress() {
+            const container = document.getElementById("progressContainer");
+            const bar = document.getElementById("progressBar");
+            const text = document.getElementById("progressText");
+
+            container.classList.remove("active");
+            bar.style.width = "0%";
+            text.innerText = "0%";
         }
 
         function uploadFile() {
@@ -225,18 +289,91 @@
             formData.append("file", file);
 
             setStatus("⏳ Uploading...", "success");
+            setProgress(0);
 
-            fetch("/files/upload", { method: "POST", body: formData })
-                .then(async res => {
-                    const data = await res.text();
-                    if (res.ok) {
-                        setStatus("✅ " + data, "success");
-                    } else {
-                        setStatus("⚠️ " + data, "error");
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    setStatus("❌ Network error. Check your connection and try again.", "error");
-                });
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener("progress", (event) => {
+                if (event.lengthComputable) {
+                    const percent = Math.round((event.loaded / event.total) * 100);
+                    setProgress(percent);
+                    setStatus(`⏳ Uploading... ${percent}%`, "success");
+                }
+            });
+
+            xhr.addEventListener("load", () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    setProgress(100);
+                    setStatus("✅ " + xhr.responseText, "success");
+                } else {
+                    setStatus("⚠️ " + xhr.responseText, "error");
+                }
+                setTimeout(resetProgress, 1500);
+            });
+
+            xhr.addEventListener("error", () => {
+                setStatus("❌ Network error. Check your connection and try again.", "error");
+                resetProgress();
+            });
+
+            xhr.open("POST", "/files/upload");
+            xhr.send(formData);
         }
+
+
+        function copyConnectionLink() {
+
+            let link = window.location.href;
+
+            // Modern clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+
+                navigator.clipboard.writeText(link)
+                    .then(() => {
+                        setStatus("✅ Connection link copied!", "success");
+                    })
+                    .catch(() => {
+                        fallbackCopy(link);
+                    });
+
+            } else {
+                // For local WiFi IP addresses
+                fallbackCopy(link);
+            }
+        }
+
+
+        function fallbackCopy(text) {
+
+            let textarea = document.createElement("textarea");
+
+            textarea.value = text;
+
+            textarea.style.position = "fixed";
+            textarea.style.left = "-9999px";
+
+            document.body.appendChild(textarea);
+
+            textarea.focus();
+            textarea.select();
+
+            try {
+
+                document.execCommand("copy");
+
+                setStatus("✅ Connection link copied!", "success");
+
+            } catch (err) {
+
+                setStatus("❌ Copy failed", "error");
+
+            }
+
+            document.body.removeChild(textarea);
+        }
+    </script>
+
+
+</body>
+
+</html>
