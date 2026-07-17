@@ -29,11 +29,16 @@ public class FileController {
         }
 
         String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null || !originalFilename.contains(".")) {
-            return ResponseEntity.badRequest().body("Unsupported file: file has no extension.");
+        if (originalFilename == null) {
+            return ResponseEntity.badRequest().body("Unsupported file: file has no name.");
         }
 
-        String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+        String cleanedFilename = sanitizeFilename(originalFilename);
+        if (cleanedFilename == null || !cleanedFilename.contains(".")) {
+            return ResponseEntity.badRequest().body("Invalid or unsupported filename.");
+        }
+
+        String extension = cleanedFilename.substring(cleanedFilename.lastIndexOf(".") + 1).toLowerCase();
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
             return ResponseEntity.badRequest().body("Unsupported file type: ." + extension);
         }
@@ -50,10 +55,10 @@ public class FileController {
                         .body("Upload failed: could not create upload directory.");
             }
 
-            File dest = new File(UPLOAD_DIR + originalFilename);
+            File dest = new File(UPLOAD_DIR + cleanedFilename);
             file.transferTo(dest);
 
-            return ResponseEntity.ok("Uploaded: " + originalFilename);
+            return ResponseEntity.ok("Uploaded: " + cleanedFilename);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Upload failed: " + e.getMessage());
@@ -72,7 +77,11 @@ public class FileController {
 
     @GetMapping("/download/{filename}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String filename) throws IOException {
-        File file = new File(UPLOAD_DIR + filename);
+        String cleanedFilename = sanitizeFilename(filename);
+        if (cleanedFilename == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        File file = new File(UPLOAD_DIR + cleanedFilename);
 
         if (!file.exists()) {
             return ResponseEntity.notFound().build();
@@ -84,5 +93,23 @@ public class FileController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getName())
                 .contentLength(file.length())
                 .body(resource);
+    }
+
+    private String sanitizeFilename(String filename) {
+        if (filename == null) {
+            return null;
+        }
+        // Normalize separators: replace backslashes with forward slashes
+        String cleaned = filename.replace('\\', '/');
+        // Extract the filename component after the last slash
+        int lastSlash = cleaned.lastIndexOf('/');
+        if (lastSlash != -1) {
+            cleaned = cleaned.substring(lastSlash + 1);
+        }
+        // Reject if empty, contains special directory references, null byte, or contains any remaining slashes
+        if (cleaned.isEmpty() || cleaned.equals(".") || cleaned.equals("..") || cleaned.contains("/") || cleaned.contains("\\") || cleaned.contains("\u0000")) {
+            return null;
+        }
+        return cleaned;
     }
 }
