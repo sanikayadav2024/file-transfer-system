@@ -1,0 +1,62 @@
+name: Welcome Contributors
+
+on:
+  issues:
+    types: [opened]
+
+  pull_request:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Welcome New Issue
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `👋 Thank you @${context.payload.issue.user.login} for opening this issue!
+
+We appreciate you taking the time to help improve **QuickShare**. 🚀
+
+Our maintainers will review your issue as soon as possible. Please be patient while we investigate it.
+
+In the meantime:
+- Make sure you've provided all the necessary details.
+- Feel free to add any additional information if needed.
+
+Thanks again for supporting QuickShare! ❤️`
+            })
+
+      - name: Welcome New Pull Request
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🎉 Thank you @${context.payload.pull_request.user.login} for your contribution to **QuickShare**!
+
+Your pull request has been received successfully. 🚀
+
+Our maintainers will review it carefully and provide feedback if necessary. We appreciate your patience during the review process.
+
+While you wait:
+- ✅ Ensure all checks pass.
+- ✅ Respond to any review comments promptly.
+- ✅ Keep your branch up to date if requested.
+
+Thanks again for contributing to QuickShare and helping make the project better! 💙`
+            })
