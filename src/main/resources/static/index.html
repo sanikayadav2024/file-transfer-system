@@ -123,7 +123,14 @@
         #status {
             margin-top: 12px;
             font-size: 13px;
-            color: #0f0;
+        }
+
+        #status.success {
+            color: #43e97b;
+        }
+
+        #status.error {
+            color: #ff4d4d;
         }
 
         .footer {
@@ -175,100 +182,61 @@
 
     <script>
 
-        function showFileName() {
-            let file = document.getElementById("fileInput").files[0];
-            document.getElementById("fileName").innerText =
-                file ? file.name : "No file selected";
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB, keep in sync with backend
+        const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "pdf", "doc", "docx", "txt", "zip", "mp4", "mp3", "xls", "xlsx", "ppt", "pptx"];
+
+        function setStatus(message, type) {
+            const status = document.getElementById("status");
+            status.innerText = message;
+            status.classList.remove("success", "error");
+            status.classList.add(type);
         }
 
+        function getExtension(filename) {
+            return filename.split(".").pop().toLowerCase();
+        }
+
+        function showFileName() {
+            let file = document.getElementById("fileInput").files[0];
+            document.getElementById("fileName").innerText = file ? file.name : "No file selected";
+            document.getElementById("status").innerText = "";
+        }
 
         function uploadFile() {
-
             let file = document.getElementById("fileInput").files[0];
 
             if (!file) {
-                alert("Select a file first!");
+                setStatus("⚠️ No file selected. Please choose a file first.", "error");
+                return;
+            }
+
+            if (file.size > MAX_FILE_SIZE) {
+                setStatus(`⚠️ File too large. Max allowed size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`, "error");
+                return;
+            }
+
+            const ext = getExtension(file.name);
+            if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                setStatus(`⚠️ Unsupported file type ".${ext}".`, "error");
                 return;
             }
 
             let formData = new FormData();
             formData.append("file", file);
 
+            setStatus("⏳ Uploading...", "success");
 
-            fetch("/files/upload", {
-                method: "POST",
-                body: formData
-            })
-
-                .then(res => res.text())
-
-                .then(data => {
-                    document.getElementById("status").innerText = data;
+            fetch("/files/upload", { method: "POST", body: formData })
+                .then(async res => {
+                    const data = await res.text();
+                    if (res.ok) {
+                        setStatus("✅ " + data, "success");
+                    } else {
+                        setStatus("⚠️ " + data, "error");
+                    }
                 })
-
                 .catch(err => {
                     console.error(err);
+                    setStatus("❌ Network error. Check your connection and try again.", "error");
                 });
-
         }
-
-
-        function copyConnectionLink() {
-
-            let link = window.location.href;
-
-            // Modern clipboard API
-            if (navigator.clipboard && window.isSecureContext) {
-
-                navigator.clipboard.writeText(link)
-                    .then(() => {
-                        document.getElementById("status").innerText =
-                            "✅ Connection link copied!";
-                    })
-                    .catch(() => {
-                        fallbackCopy(link);
-                    });
-
-            } else {
-                // For local WiFi IP addresses
-                fallbackCopy(link);
-            }
-        }
-
-
-        function fallbackCopy(text) {
-
-            let textarea = document.createElement("textarea");
-
-            textarea.value = text;
-
-            textarea.style.position = "fixed";
-            textarea.style.left = "-9999px";
-
-            document.body.appendChild(textarea);
-
-            textarea.focus();
-            textarea.select();
-
-            try {
-
-                document.execCommand("copy");
-
-                document.getElementById("status").innerText =
-                    "✅ Connection link copied!";
-
-            } catch (err) {
-
-                document.getElementById("status").innerText =
-                    "❌ Copy failed";
-
-            }
-
-            document.body.removeChild(textarea);
-        }
-    </script>
-
-
-</body>
-
-</html>
