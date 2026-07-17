@@ -217,13 +217,16 @@
         <p id="status"></p>
 
         <div class="footer">
-            Same WiFi • Secure Transfer
+            Same WiFi • HTTPS Encrypted Transfer
         </div>
 
     </div>
 
 
     <script>
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token') || '';
 
         const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB, keep in sync with backend
         const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "pdf", "doc", "docx", "txt", "zip", "mp4", "mp3", "xls", "xlsx", "ppt", "pptx"];
@@ -317,6 +320,9 @@
             });
 
             xhr.open("POST", "/files/upload");
+            if (token) {
+                xhr.setRequestHeader("X-Auth-Token", token);
+            }
             xhr.send(formData);
         }
 
