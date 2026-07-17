@@ -20,6 +20,23 @@ public class FileController {
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
             "jpg", "jpeg", "png", "gif", "pdf", "doc", "docx",
             "txt", "zip", "mp4", "mp3", "xls", "xlsx", "ppt", "pptx");
+    
+    private static final List<String> ALLOWED_MIME_TYPES = Arrays.asList(
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain",
+        "application/zip",
+        "video/mp4",
+        "audio/mpeg",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    );
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(@RequestParam(value = "file", required = false) MultipartFile file) {
@@ -28,7 +45,11 @@ public class FileController {
             return ResponseEntity.badRequest().body("No file selected. Please choose a file to upload.");
         }
 
-        String originalFilename = file.getOriginalFilename();
+        String originalFilename = new File(file.getOriginalFilename()).getName();
+        if (originalFilename.contains("..")) {
+           return ResponseEntity.badRequest()
+            .body("Invalid file name.");
+        }
         if (originalFilename == null || !originalFilename.contains(".")) {
             return ResponseEntity.badRequest().body("Unsupported file: file has no extension.");
         }
@@ -37,7 +58,12 @@ public class FileController {
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
             return ResponseEntity.badRequest().body("Unsupported file type: ." + extension);
         }
+        String mimeType = file.getContentType();
 
+        if (mimeType == null || !ALLOWED_MIME_TYPES.contains(mimeType)) {
+            return ResponseEntity.badRequest()
+             .body("Unsupported MIME type: " + mimeType);
+        }
         if (file.getSize() > MAX_FILE_SIZE) {
             return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
                     .body("File too large. Maximum allowed size is " + (MAX_FILE_SIZE / (1024 * 1024)) + "MB.");
@@ -49,11 +75,15 @@ public class FileController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body("Upload failed: could not create upload directory.");
             }
+            File dest = new File(UPLOAD_DIR, originalFilename);
 
-            File dest = new File(UPLOAD_DIR + originalFilename);
-            file.transferTo(dest);
+            if (dest.exists()) {
+               return ResponseEntity.status(HttpStatus.CONFLICT)
+              .body("A file with the same name already exists. Please rename the file and try again.");
+            }
 
-            return ResponseEntity.ok("Uploaded: " + originalFilename);
+           file.transferTo(dest);
+          return ResponseEntity.ok("Uploaded: " + originalFilename);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Upload failed: " + e.getMessage());
