@@ -111,11 +111,15 @@ java -jar target/file-transfer-system.jar
 - 🎨 Improved UI/UX  
 
 ---
+## 🤝 Contributors
 
-## 🤝 Contributing
+Thank you to everyone who has contributed to QuickShare!
 
-Contributions are welcome!  
-Feel free to fork this repository and submit a pull request 🚀  
+<a href="https://github.com/sanikayadav2024/file-transfer-system/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=sanikayadav2024/file-transfer-system" />
+</a>
+
+Want to contribute? Check out the issues and submit a pull request!
 
 ---
 
