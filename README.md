@@ -89,9 +89,35 @@ java -jar target/file-transfer-system.jar
 
 - Start the application  
 - Open your browser:  
-  👉 http://localhost:8080  
+  👉 **https://localhost:8443**  
 - Scan the QR code or use the IP address on another device  
-- Upload and download files easily  
+- Upload files securely with auto-generated token auth  
+
+---
+
+## 🔒 Security (HTTPS & Token Auth)
+
+This application includes transport-layer encryption (HTTPS) and endpoint authorization to protect local network file transfers.
+
+### 🛡️ HTTPS & Self-Signed Certificates
+For local network environments, a self-signed TLS/SSL certificate is generated and configured inside [keystore.p12](file:///c:/Users/Moiz/Desktop/file%20transfer%20system/file-transfer-system/src/main/resources/keystore.p12).
+* **Browser Warnings:** When accessing the site on `https://<ip>:8443`, your browser will display a warning like *"Your connection is not private"* or *"Potential Security Risk Ahead"*. This is normal for local self-signed certificates.
+* **How to proceed:** Click **Advanced** and select **Proceed to <IP Address> (unsafe)**. Your traffic will then be completely encrypted in transit.
+* **Clipboard Access:** By running over HTTPS, browsers grant access to the secure clipboard API (`navigator.clipboard`), allowing the **Copy Connection Link** button to work seamlessly on mobile/remote devices.
+
+### 🔑 Token Authentication
+To prevent unauthorized users on the same WiFi network from scanning or accessing the API endpoints directly:
+* A cryptographically secure random token (UUID) is generated dynamically when the application starts.
+* This token is appended as a query parameter (`?token=...`) to the URL opened by the host machine and the generated QR code.
+* The frontend automatically extracts this token and includes it as an `X-Auth-Token` header for upload requests.
+* Unauthorized requests without a valid token are rejected with a `401 Unauthorized` status.
+
+### ⚙️ Switching back to Plain HTTP
+If you do not want to use HTTPS/TLS or handle self-signed certificate warnings, you can fall back to HTTP:
+1. Open [application.properties](file:///c:/Users/Moiz/Desktop/file%20transfer%20system/file-transfer-system/src/main/resources/application.properties).
+2. Comment out or delete all `server.ssl.*` lines.
+3. Change `server.port` back to `8080`.
+4. Restart the application.
 
 ---
 
@@ -105,7 +131,6 @@ java -jar target/file-transfer-system.jar
 
 ## 🔮 Future Improvements
 
-- 🔒 Secure file transfer (encryption)  
 - 📊 Transfer history tracking  
 - 👥 Multi-user support  
 - 🎨 Improved UI/UX  
